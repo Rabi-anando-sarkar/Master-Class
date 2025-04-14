@@ -1,0 +1,31 @@
+# Ignore node_modules in all sub-projects
+project-one/node_modules/
+project-two/node_modules/
+project-three/node_modules/
+project-four/node_modules/
+project-five/node_modules/
+
+# Ignore build/dist folders if any (common for TS projects)
+project-one/dist/
+project-two/dist/
+project-three/dist/
+project-four/dist/
+project-five/dist/
+
+# Ignore environment files (secrets!)
+project-one/.env
+project-two/.env
+project-three/.env
+project-four/.env
+project-five/.env
+
+# OS & IDE-specific junk files
+.DS_Store
+*.log
+*.local
+*.env.local
+.env.*
+!.env.example
+
+# If using TypeScript - ignore compiled JS
+**/*.tsbuildinfo
