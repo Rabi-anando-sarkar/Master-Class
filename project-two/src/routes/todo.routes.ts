@@ -1,6 +1,6 @@
 import { Router } from "express"
-import { createTodo, deleteTodo, readTodo, updateTodo } from "../controllers/todo.controllers.js"
-import { authentication } from '../middlewares/auth.middleware.js'
+import { createTodo, deleteTodo, readTodo, updateTodo } from "../controllers/todo.controllers"
+import { authentication } from '../middlewares/auth.middleware'
 
 export const todoRouter = Router()
 

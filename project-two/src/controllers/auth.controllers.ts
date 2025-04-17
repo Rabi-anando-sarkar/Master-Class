@@ -1,11 +1,25 @@
-import { asyncHandler } from "../utils/AsyncHandler.js"
-import { ApiResponse } from "../utils/ApiResponse.js"
-import { ApiError } from "../utils/ApiError.js"
-import { User } from "../models/user.models.js"
+import { asyncHandler } from "../utils/AsyncHandler"
+import { ApiResponse } from "../utils/ApiResponse"
+import { ApiError } from "../utils/ApiError"
+import { User } from "../models/user.models"
+import { Types } from "mongoose"
+import { HttpStatusCode, ErrorType } from '../types/enums'
+import { Request, Response } from "express"
+import { IUser } from "../types/user.types"
+import { AuthenticatedRequest } from "../types/express"
 
-const generateAccessAndRefreshToken = async(userId) => {
+const generateAccessAndRefreshToken = async(userId: Types.ObjectId): Promise<TokenResponse> => {
     try {
         const user = await User.findById(userId)
+
+        if(!user) {
+            throw new ApiError(
+                HttpStatusCode.NOT_FOUND,
+                "User not Found",
+                ErrorType.NOT_FOUND
+            )
+        }
+
         const accessToken = user.generateAccessToken()
         const refreshToken = user.generateRefreshToken()
 
@@ -21,25 +35,27 @@ const generateAccessAndRefreshToken = async(userId) => {
 
     } catch (error) {
         throw new ApiError(
-            500,
-            'SOMETHING WENT WRONG GENERATING ACCESS AND REFRESH TOKEN'
+            HttpStatusCode.INTERNAL_SERVER_ERROR,
+            "Error Creating Tokens",
+            ErrorType.INTERNAL_SERVER_ERROR
         )
     }
 }
 
-const registerUser = asyncHandler(async (req,res) => {
+const registerUser = asyncHandler(async (req: Request<{},{}, IRegister>,res: Response): Promise<Response> => {
     const {
         username,
         email,
         password
-    } = req.body
+    } = req.body 
 
     if(
         [username,email,password].some((field) => (field?.trim() === ''))
     ) {
         throw new ApiError(
-            400,
-            'All feilds are required'
+            HttpStatusCode.BAD_REQUEST,
+            "All fields are required",
+            ErrorType.VALIDATION_ERROR
         )
     }
 
@@ -49,12 +65,13 @@ const registerUser = asyncHandler(async (req,res) => {
 
     if(existedUser) {
         throw new ApiError(
-            400,
-            'User with this email or username already exists'
+            HttpStatusCode.BAD_REQUEST,
+            "Already exists with this username or password",
+            ErrorType.VALIDATION_ERROR
         )
     }
 
-    const user = await User.create({
+    const user: IUser = await User.create({
         username : username.toLowerCase(),
         email,
         password
@@ -62,8 +79,9 @@ const registerUser = asyncHandler(async (req,res) => {
 
     if(!user) {
         throw new ApiError(
-            500,
-            "User not created"
+            HttpStatusCode.INTERNAL_SERVER_ERROR,
+            "User not created",
+            ErrorType.DATABASE_ERROR
         )
     }
 
@@ -71,8 +89,9 @@ const registerUser = asyncHandler(async (req,res) => {
 
     if(!creadtedUser) {
         throw new ApiError(
-            500,
-            "created user not available"
+            HttpStatusCode.INTERNAL_SERVER_ERROR,
+            "Created user not available",
+            ErrorType.NOT_FOUND
         )
     }
 
@@ -85,7 +104,7 @@ const registerUser = asyncHandler(async (req,res) => {
             ))
 })
 
-const signInUser = asyncHandler(async (req,res) => {
+const signInUser = asyncHandler(async (req: Request<{}, {}, ISignIn>,res: Response): Promise<Response> => {
     const {
         username,
         email,
@@ -96,8 +115,9 @@ const signInUser = asyncHandler(async (req,res) => {
         [username,email,password].some((field) => (field?.trim() === ''))
     ) {
         throw new ApiError(
-            400,
-            'All feilds are required'
+            HttpStatusCode.BAD_REQUEST,
+            "All fields are required",
+            ErrorType.VALIDATION_ERROR
         )
     }
 
@@ -107,8 +127,9 @@ const signInUser = asyncHandler(async (req,res) => {
 
     if(!user) {
         throw new ApiError(
-            404,
-            "User does not exist"
+            HttpStatusCode.NOT_FOUND,
+            "All fields are required",
+            ErrorType.NOT_FOUND
         )
     }
 
@@ -116,8 +137,9 @@ const signInUser = asyncHandler(async (req,res) => {
 
     if(!isPasswordValid) {
         throw new ApiError(
-            401,
-            'Password is not valid'
+            HttpStatusCode.BAD_REQUEST,
+            "All fields are required",
+            ErrorType.VALIDATION_ERROR
         )
     }
 
@@ -140,12 +162,12 @@ const signInUser = asyncHandler(async (req,res) => {
                     {
                         user: loggedInUser, accessToken, refreshToken
                     },
-                    "User Signed in succesfuly"
+                    "User Signed in succesfully"
                 )
             )
 })
 
-const signOutUser = asyncHandler(async (req,res) => {
+const signOutUser = asyncHandler(async (req:AuthenticatedRequest,res: Response): Promise<Response> => {
     await User.findByIdAndUpdate(
         req.user._id,
         {

@@ -1,16 +1,19 @@
 import dotenv from "dotenv"
-dotenv.config({
-    path: '.env'
-})
+import { connectToDB } from './config/db'
+import { app } from "./app"
+import path from 'path';
 
-import { connectToDB } from './config/db.js'
-import { app } from "./app.js"
+console.log('Current working directory:', process.cwd());
+
+dotenv.config({
+    path: path.resolve(__dirname, '../.env')
+});
 
 if(!process.env.PORT) {
     console.log(`PORT not set in environment variables.`)
 }
 
-const startServer = async () => {
+const startServer = async (): Promise<void> => {
     try {
         await connectToDB()
         console.log("MongoDB connected successfully");
